@@ -1,6 +1,7 @@
-import React, { useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
-import confetti from 'canvas-confetti';
+import React, { useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { playSwishSound } from '../utils/soundUtils';
+import Glitter from './Glitter';
 
 const PuzzlePiece = ({
     index,
@@ -14,30 +15,6 @@ const PuzzlePiece = ({
     positionAdjustment = { offsetX: 0, offsetY: 0 },
     scaleAdjustment = { scaleX: 1.0, scaleY: 1.0 }
 }) => {
-    const hasFiredConfetti = useRef(false);
-
-    useEffect(() => {
-        if (isRevealed && !hasFiredConfetti.current) {
-            const el = document.getElementById(`piece-${index}`);
-            if (el) {
-                const rect = el.getBoundingClientRect();
-                const x = (rect.left + rect.width / 2) / window.innerWidth;
-                const y = (rect.top + rect.height / 2) / window.innerHeight;
-                confetti({
-                    particleCount: 50,
-                    spread: 60,
-                    origin: { x, y },
-                    colors: ['#FFD700', '#FFFFFF', '#FFA500'],
-                    disableForReducedMotion: true,
-                    zIndex: 1000,
-                });
-            }
-            hasFiredConfetti.current = true;
-        } else if (!isRevealed) {
-            hasFiredConfetti.current = false;
-        }
-    }, [isRevealed, index]);
-
     // Random start position
     const randomValues = useRef({
         x: (Math.random() - 0.5) * 500,
@@ -60,6 +37,22 @@ const PuzzlePiece = ({
     // Apply manual position adjustment (percentage-based, scales with puzzle size)
     const left = (col * width) + (bounds.minX * width) + (positionAdjustment.offsetX * width);
     const top = (row * height) + (bounds.minY * height) + (positionAdjustment.offsetY * height);
+
+    const [showGlitter, setShowGlitter] = React.useState(false);
+
+    useEffect(() => {
+        if (isRevealed) {
+            playSwishSound();
+            setShowGlitter(true);
+            // Stop glitter after 2 seconds (matching the filter animation duration)
+            const timer = setTimeout(() => {
+                setShowGlitter(false);
+            }, 2000);
+            return () => clearTimeout(timer);
+        } else {
+            setShowGlitter(false);
+        }
+    }, [isRevealed]);
 
     return (
         <div
@@ -107,36 +100,59 @@ const PuzzlePiece = ({
                 }}
             >
                 {/* The Pre-cut Image */}
-                <img
+                <motion.img
                     src={imageSrc}
                     alt={`Piece ${row}-${col}`}
+                    animate={isRevealed ? {
+                        filter: [
+                            "drop-shadow(0 0 0px rgba(255, 215, 0, 0))",
+                            "drop-shadow(0 0 15px rgba(255, 215, 0, 1))",
+                            "drop-shadow(0 0 2px rgba(255, 215, 0, 0.5))"
+                        ]
+                    } : {
+                        filter: "drop-shadow(0 0 0px rgba(255, 215, 0, 0))"
+                    }}
+                    transition={{
+                        duration: 2,
+                        times: [0, 0.4, 1],
+                        ease: "easeInOut"
+                    }}
                     style={{
                         width: '100%',
                         height: '100%',
                         // We use fill because we calculated the exact container size
                         objectFit: 'fill',
-                        filter: isRevealed ? 'drop-shadow(0 0 2px rgba(255, 215, 0, 0.5))' : 'none',
                         transform: `scale(${scaleAdjustment.scaleX}, ${scaleAdjustment.scaleY})`,
                         transformOrigin: 'center'
                     }}
                 />
 
-                {isRevealed && (
-                    <motion.div
-                        initial={{ opacity: 1 }}
-                        animate={{ opacity: 0 }}
-                        transition={{ duration: 1 }}
-                        style={{
-                            position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            width: '100%',
-                            height: '100%',
-                            pointerEvents: 'none',
-                            zIndex: 2
-                        }}
-                    />
-                )}
+                <AnimatePresence>
+                    {showGlitter && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 1 }}
+                            style={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                width: '100%',
+                                height: '100%',
+                                pointerEvents: 'none',
+                                zIndex: 10
+                            }}
+                        >
+                            <Glitter
+                                imageSrc={imageSrc}
+                                width={width}
+                                height={height}
+                                scaleAdjustment={scaleAdjustment}
+                            />
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </motion.div>
         </div>
     );

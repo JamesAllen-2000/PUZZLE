@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import PuzzlePiece from './PuzzlePiece';
 import { PIECE_POSITION_ADJUSTMENTS, PIECE_SCALE_ADJUSTMENTS } from '../config/piecePositions';
 
@@ -125,8 +126,11 @@ const PuzzleBoard = ({ revealedPieces, imageSrc }) => {
         }
     }
 
+    console.log("Rendering PuzzleBoard with pieces:", pieces.length, "Dimensions:", dimensions);
+
     return (
         <div
+            id="puzzle-board-container"
             style={{
                 width: dimensions.width,
                 height: dimensions.height,
@@ -195,6 +199,29 @@ const PuzzleBoard = ({ revealedPieces, imageSrc }) => {
                     </div>
                 );
             })}
+
+            {/* Full Image Overlay on Completion */}
+            <AnimatePresence>
+                {revealedPieces.every(Boolean) && revealedPieces.length === 10 && (
+                    <motion.img
+                        src={imageSrc}
+                        alt="Full Puzzle"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 1.5, ease: "easeInOut" }}
+                        style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '103%',
+                            height: '103%',
+                            objectFit: 'cover', // Or 'fill' to match exact dimensions
+                            zIndex: 2000,
+                            pointerEvents: 'none'
+                        }}
+                    />
+                )}
+            </AnimatePresence>
         </div>
     );
 };
