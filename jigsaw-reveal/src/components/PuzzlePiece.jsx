@@ -105,12 +105,12 @@ const PuzzlePiece = ({
                     alt={`Piece ${row}-${col}`}
                     animate={isRevealed ? {
                         filter: [
-                            "drop-shadow(0 0 0px rgba(255, 215, 0, 0))",
-                            "drop-shadow(0 0 15px rgba(255, 215, 0, 1))",
-                            "drop-shadow(0 0 2px rgba(255, 215, 0, 0.5))"
+                            "drop-shadow(0 0 0px rgba(0, 0, 0, 0))",
+                            "drop-shadow(0 0 15px rgba(255, 215, 0, 0.8))", // Temporary gold glow
+                            "drop-shadow(0 0 5px rgba(0, 0, 0, 0.9))" // Final dark shadow
                         ]
                     } : {
-                        filter: "drop-shadow(0 0 0px rgba(255, 215, 0, 0))"
+                        filter: "drop-shadow(0 0 0px rgba(0, 0, 0, 0))"
                     }}
                     transition={{
                         duration: 2,

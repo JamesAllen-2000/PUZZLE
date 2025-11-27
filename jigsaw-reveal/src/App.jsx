@@ -1,10 +1,14 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import PuzzleBoard from './components/PuzzleBoard';
 import puzzleImage from './assets/puzzle.png';
+import puzzleVideo from './assets/PUZZLE.mp4';
+import './App.css';
 
 function App() {
-  // 10 pieces, initially all false (hidden/unrevealed)
+  // Game status: 'idle' | 'playing_video' | 'revealing'
+  const [gameStatus, setGameStatus] = useState('idle');
   const [revealedPieces, setRevealedPieces] = useState(Array(10).fill(false));
+  const videoRef = useRef(null);
 
   const togglePiece = useCallback((index) => {
     setRevealedPieces(prev => {
@@ -27,6 +31,8 @@ function App() {
   }, []);
 
   useEffect(() => {
+    if (gameStatus !== 'revealing') return;
+
     const handleKeyDown = (e) => {
       if (e.code === 'Space') {
         e.preventDefault(); // Prevent scrolling
@@ -41,14 +47,47 @@ function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [revealNext, togglePiece]);
+  }, [gameStatus, revealNext, togglePiece]);
+
+  const handlePlayClick = () => {
+    setGameStatus('playing_video');
+    if (videoRef.current) {
+      videoRef.current.play();
+    }
+  };
+
+  const handleTimeUpdate = () => {
+    if (videoRef.current && videoRef.current.currentTime >= 10) {
+      videoRef.current.pause();
+      setGameStatus('revealing');
+    }
+  };
 
   return (
     <div className="app-container">
-      <PuzzleBoard
-        revealedPieces={revealedPieces}
-        imageSrc={puzzleImage}
+      <video
+        ref={videoRef}
+        className={`video-background ${gameStatus === 'revealing' ? 'blurred' : ''}`}
+        src={puzzleVideo}
+        muted
+        playsInline
+        onTimeUpdate={handleTimeUpdate}
       />
+
+      {gameStatus === 'idle' && (
+        <button className="play-button" onClick={handlePlayClick}>
+          Play
+        </button>
+      )}
+
+      {gameStatus === 'revealing' && (
+        <div className="game-layer">
+          <PuzzleBoard
+            revealedPieces={revealedPieces}
+            imageSrc={puzzleImage}
+          />
+        </div>
+      )}
     </div>
   );
 }
