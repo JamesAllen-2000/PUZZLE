@@ -4,11 +4,15 @@ import puzzleImage from './assets/puzzle.png';
 import puzzleVideo from './assets/PUZZLE.mp4';
 import './App.css';
 
+import TextReveal from './TextReveal';
+
 function App() {
   // Game status: 'idle' | 'playing_video' | 'revealing'
   const [gameStatus, setGameStatus] = useState('idle');
   const [revealedPieces, setRevealedPieces] = useState(Array(10).fill(false));
   const videoRef = useRef(null);
+
+  const isPuzzleComplete = revealedPieces.every(Boolean);
 
   const togglePiece = useCallback((index) => {
     setRevealedPieces(prev => {
@@ -30,31 +34,36 @@ function App() {
     });
   }, []);
 
-  useEffect(() => {
-    if (gameStatus !== 'revealing') return;
+  const handlePlayClick = useCallback(() => {
+    setGameStatus('playing_video');
+    if (videoRef.current) {
+      videoRef.current.play();
+    }
+  }, []);
 
+  useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.code === 'Space') {
-        e.preventDefault(); // Prevent scrolling
-        revealNext();
-      } else if (e.key >= '1' && e.key <= '9') {
-        const index = parseInt(e.key) - 1;
-        togglePiece(index);
-      } else if (e.key === '0') {
-        togglePiece(9);
+      if (gameStatus === 'idle') {
+        if (e.code === 'Space') {
+          e.preventDefault();
+          handlePlayClick();
+        }
+      } else if (gameStatus === 'revealing') {
+        if (e.code === 'Space') {
+          e.preventDefault(); // Prevent scrolling
+          revealNext();
+        } else if (e.key >= '1' && e.key <= '9') {
+          const index = parseInt(e.key) - 1;
+          togglePiece(index);
+        } else if (e.key === '0') {
+          togglePiece(9);
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [gameStatus, revealNext, togglePiece]);
-
-  const handlePlayClick = () => {
-    setGameStatus('playing_video');
-    if (videoRef.current) {
-      videoRef.current.play();
-    }
-  };
+  }, [gameStatus, revealNext, togglePiece, handlePlayClick]);
 
   const handleTimeUpdate = () => {
     if (videoRef.current && videoRef.current.currentTime >= 10) {
@@ -86,6 +95,7 @@ function App() {
             revealedPieces={revealedPieces}
             imageSrc={puzzleImage}
           />
+          {isPuzzleComplete && <TextReveal />}
         </div>
       )}
     </div>
